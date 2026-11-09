@@ -1,103 +1,94 @@
 ﻿using System;
+using System.Globalization;
+using System.Text;
 
 class Program
 {
     static void Main()
     {
+        // Needed to display the € symbol correctly in the console
+        Console.OutputEncoding = Encoding.UTF8;
+
         // Constants
-        const int ARRAY_SIZE = 10;
-        const int MIN_VALUE = 1;
-        const int MAX_VALUE = 9;
+        const int ITEM_COUNT = 4;
+        const int MIN_LEVEL = 1;
+        const int MAX_LEVEL = 10;
+        const int MIN_POWER = 100;
+        const int MAX_POWER = 500;
+        const double MIN_WEIGHT = 0.5;
+        const double MAX_WEIGHT = 10.0;
+        const double MIN_COST = 5.0;
+        const double MAX_COST = 200.0;
+        const double RARE_PROBABILITY = 0.5;
+        const string ORDINARY_TYPE = "Ordinary";
+        const string CURRENCY = "€";
 
         // Console colors
         const ConsoleColor TITLE_COLOR = ConsoleColor.Cyan;
-        const ConsoleColor NUMBERS_COLOR = ConsoleColor.Green;
-        const ConsoleColor PROMPT_COLOR = ConsoleColor.Yellow;
-        const ConsoleColor SUCCESS_COLOR = ConsoleColor.Green;
-        const ConsoleColor WARNING_COLOR = ConsoleColor.Yellow;
-        const ConsoleColor ERROR_COLOR = ConsoleColor.Red;
+        const ConsoleColor HEADER_COLOR = ConsoleColor.DarkYellow;
+        const ConsoleColor RARE_COLOR = ConsoleColor.Magenta;
+        const ConsoleColor COMMON_COLOR = ConsoleColor.White;
+
+        string[] itemNames = { "Sword", "Shield", "Potion", "Bow" };
+        string[] rareTypeOptions = { "Common", "Rare", "Legendary", "Ordinary" };
+
+        // One array per attribute, the same index belongs to the same item
+        int[] minLevels = new int[ITEM_COUNT];
+        int[] powers = new int[ITEM_COUNT];
+        double[] weights = new double[ITEM_COUNT];
+        double[] costs = new double[ITEM_COUNT];
+        bool[] isRareItem = new bool[ITEM_COUNT];
+        string[] rareTypes = new string[ITEM_COUNT];
 
         Random random = new Random();
-        int[] numbers = new int[ARRAY_SIZE];
 
-        // Fill the array (the upper bound of Next() is exclusive, so we add 1)
-        for (int i = 0; i < numbers.Length; i++)
+        for (int i = 0; i < ITEM_COUNT; i++)
         {
-            numbers[i] = random.Next(MIN_VALUE, MAX_VALUE + 1);
-        }
+            bool isValid;
 
-        // Show the generated numbers
-        Console.ForegroundColor = TITLE_COLOR;
-        Console.WriteLine("Generated numbers:");
-        Console.ForegroundColor = NUMBERS_COLOR;
-        for (int i = 0; i < numbers.Length; i++)
-        {
-            Console.Write(numbers[i] + " ");
-        }
-        Console.WriteLine();
-        Console.ResetColor();
-
-        // Sort in ascending order
-        Array.Sort(numbers);
-
-        // Ask for the value to search until it is valid
-        int searchValue;
-        bool isValid;
-
-        do
-        {
-            Console.WriteLine();
-            Console.ForegroundColor = TITLE_COLOR;
-            Console.WriteLine($"Which value do you want to search? ({MIN_VALUE}-{MAX_VALUE})");
-            Console.ForegroundColor = PROMPT_COLOR;
-            Console.Write("> ");
-            Console.ResetColor();
-
-            isValid = int.TryParse(Console.ReadLine(), out searchValue)
-                      && searchValue >= MIN_VALUE && searchValue <= MAX_VALUE;
-
-            if (!isValid)
+            // Generate the attributes and regenerate them if any value is not valid
+            do
             {
-                Console.ForegroundColor = ERROR_COLOR;
-                Console.WriteLine($"Error: enter a whole number between {MIN_VALUE} and {MAX_VALUE}.");
-                Console.ResetColor();
-            }
-        } while (!isValid);
+                minLevels[i] = random.Next(MIN_LEVEL, MAX_LEVEL + 1);
+                powers[i] = random.Next(MIN_POWER, MAX_POWER + 1);
+                weights[i] = Math.Round(MIN_WEIGHT + random.NextDouble() * (MAX_WEIGHT - MIN_WEIGHT), 1);
+                costs[i] = Math.Round(MIN_COST + random.NextDouble() * (MAX_COST - MIN_COST), 2);
+                isRareItem[i] = random.NextDouble() < RARE_PROBABILITY;
 
-        // Count how many times the value appears
-        int count = 0;
+                // Rare items get a random type, the others are always "Ordinary"
+                rareTypes[i] = isRareItem[i]
+                    ? rareTypeOptions[random.Next(rareTypeOptions.Length)]
+                    : ORDINARY_TYPE;
 
-        foreach (int number in numbers)
-        {
-            if (number == searchValue)
-            {
-                count++;
-            }
+                isValid = minLevels[i] >= MIN_LEVEL && minLevels[i] <= MAX_LEVEL
+                          && powers[i] >= MIN_POWER && powers[i] <= MAX_POWER
+                          && weights[i] > 0
+                          && costs[i] > 0
+                          && !string.IsNullOrEmpty(itemNames[i])
+                          && !string.IsNullOrEmpty(rareTypes[i]);
+            } while (!isValid);
         }
 
-        Console.WriteLine();
-
-        if (count > 0)
-        {
-            Console.ForegroundColor = SUCCESS_COLOR;
-            Console.WriteLine($"The value {searchValue} is in the list and appears {count} time(s).");
-        }
-        else
-        {
-            Console.ForegroundColor = WARNING_COLOR;
-            Console.WriteLine($"The value {searchValue} is not in the list.");
-        }
-
-        // Show the sorted list
-        Console.WriteLine();
+        // Show the table
         Console.ForegroundColor = TITLE_COLOR;
-        Console.WriteLine("Sorted list:");
-        Console.ForegroundColor = NUMBERS_COLOR;
-        for (int i = 0; i < numbers.Length; i++)
-        {
-            Console.Write(numbers[i] + " ");
-        }
+        Console.WriteLine("=== AVAILABLE SHOP ITEMS ===");
         Console.WriteLine();
+
+        Console.ForegroundColor = HEADER_COLOR;
+        Console.WriteLine("{0,-10}{1,-12}{2,-8}{3,-13}{4,-12}{5,-12}{6}",
+            "Name", "Min level", "Power", "Weight (kg)", "Cost (" + CURRENCY + ")", "IsRareItem", "RareType");
+
+        for (int i = 0; i < ITEM_COUNT; i++)
+        {
+            Console.ForegroundColor = isRareItem[i] ? RARE_COLOR : COMMON_COLOR;
+
+            // InvariantCulture forces the dot as decimal separator (134.50)
+            string weightText = weights[i].ToString("F1", CultureInfo.InvariantCulture);
+            string costText = costs[i].ToString("F2", CultureInfo.InvariantCulture) + " " + CURRENCY;
+
+            Console.WriteLine("{0,-10}{1,-12}{2,-8}{3,-13}{4,-12}{5,-12}{6}",
+                itemNames[i], minLevels[i], powers[i], weightText, costText, isRareItem[i], rareTypes[i]);
+        }
 
         Console.ResetColor();
     }
