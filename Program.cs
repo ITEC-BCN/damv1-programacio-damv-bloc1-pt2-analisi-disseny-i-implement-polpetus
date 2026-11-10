@@ -1,95 +1,123 @@
 ﻿using System;
-using System.Globalization;
 using System.Text;
 
 class Program
 {
     static void Main()
     {
-        // Needed to display the € symbol correctly in the console
+        // Needed to display emojis correctly in the console
         Console.OutputEncoding = Encoding.UTF8;
 
         // Constants
-        const int ITEM_COUNT = 4;
-        const int MIN_LEVEL = 1;
-        const int MAX_LEVEL = 10;
-        const int MIN_POWER = 100;
-        const int MAX_POWER = 500;
-        const double MIN_WEIGHT = 0.5;
-        const double MAX_WEIGHT = 10.0;
-        const double MIN_COST = 5.0;
-        const double MAX_COST = 200.0;
-        const double RARE_PROBABILITY = 0.5;
-        const string ORDINARY_TYPE = "Ordinary";
-        const string CURRENCY = "€";
+        const int TROOPS_SIZE = 10;
+        const int MAP_SIZE = 5;
+        const int REGION_COUNT = 3;
+        const int FIRST_REGION_COLUMNS = 4;
+        const int SECOND_REGION_COLUMNS = 2;
+        const int THIRD_REGION_COLUMNS = 3;
 
-        // Console colors
+        const string DEFENSIVE_ZONE = "🛡️";
+        const string ATTACK_ZONE = "⚔️";
+        const string WATCHTOWER = "🗼";
+        const string HIDDEN_CAVE = "🕳️";
+        const string NEUTRAL_TERRAIN = "🌿";
+        const string EXTRA_RESOURCE = "💎";
+        const string EMPTY_LAND = "➖";
+
         const ConsoleColor TITLE_COLOR = ConsoleColor.Cyan;
-        const ConsoleColor HEADER_COLOR = ConsoleColor.DarkYellow;
-        const ConsoleColor RARE_COLOR = ConsoleColor.Magenta;
-        const ConsoleColor COMMON_COLOR = ConsoleColor.White;
+        const ConsoleColor LEGEND_COLOR = ConsoleColor.DarkGray;
 
-        string[] itemNames = { "Sword", "Shield", "Potion", "Bow" };
-        string[] rareTypeOptions = { "Common", "Rare", "Legendary", "Ordinary" };
+        // 1. One-dimensional array (troops)
+        string[] troops = new string[TROOPS_SIZE];
 
-        // One array per attribute, the same index belongs to the same item
-        int[] minLevels = new int[ITEM_COUNT];
-        int[] powers = new int[ITEM_COUNT];
-        double[] weights = new double[ITEM_COUNT];
-        double[] costs = new double[ITEM_COUNT];
-        bool[] isRareItem = new bool[ITEM_COUNT];
-        string[] rareTypes = new string[ITEM_COUNT];
-
-        Random random = new Random();
-
-        for (int i = 0; i < ITEM_COUNT; i++)
+        for (int i = 0; i < troops.Length; i++)
         {
-            bool isValid;
-
-            // Generate the attributes and regenerate them if any value is not valid
-            do
-            {
-                minLevels[i] = random.Next(MIN_LEVEL, MAX_LEVEL + 1);
-                powers[i] = random.Next(MIN_POWER, MAX_POWER + 1);
-                weights[i] = Math.Round(MIN_WEIGHT + random.NextDouble() * (MAX_WEIGHT - MIN_WEIGHT), 1);
-                costs[i] = Math.Round(MIN_COST + random.NextDouble() * (MAX_COST - MIN_COST), 2);
-                isRareItem[i] = random.NextDouble() < RARE_PROBABILITY;
-
-                // Rare items get a random type, the others are always "Ordinary"
-                rareTypes[i] = isRareItem[i]
-                    ? rareTypeOptions[random.Next(rareTypeOptions.Length)]
-                    : ORDINARY_TYPE;
-
-                isValid = minLevels[i] >= MIN_LEVEL && minLevels[i] <= MAX_LEVEL
-                          && powers[i] >= MIN_POWER && powers[i] <= MAX_POWER
-                          && weights[i] > 0
-                          && costs[i] > 0
-                          && !string.IsNullOrEmpty(itemNames[i])
-                          && !string.IsNullOrEmpty(rareTypes[i]);
-            } while (!isValid);
+            // Even positions are defensive zones, odd positions are attack zones
+            troops[i] = i % 2 == 0 ? DEFENSIVE_ZONE : ATTACK_ZONE;
         }
 
-        // Show the table
         Console.ForegroundColor = TITLE_COLOR;
-        Console.WriteLine("=== AVAILABLE SHOP ITEMS ===");
+        Console.WriteLine("=== 1. TROOPS (one-dimensional array) ===");
+        Console.ForegroundColor = LEGEND_COLOR;
+        Console.WriteLine($"{DEFENSIVE_ZONE} Defensive zone (even)  {ATTACK_ZONE} Attack zone (odd)");
+        Console.ResetColor();
+
+        for (int i = 0; i < troops.Length; i++)
+        {
+            Console.Write(troops[i] + " ");
+        }
         Console.WriteLine();
 
-        Console.ForegroundColor = HEADER_COLOR;
-        Console.WriteLine("{0,-10}{1,-12}{2,-8}{3,-13}{4,-12}{5,-12}{6}",
-            "Name", "Min level", "Power", "Weight (kg)", "Cost (" + CURRENCY + ")", "IsRareItem", "RareType");
+        // 2. Two-dimensional array (map)
+        string[,] map = new string[MAP_SIZE, MAP_SIZE];
 
-        for (int i = 0; i < ITEM_COUNT; i++)
+        for (int row = 0; row < MAP_SIZE; row++)
         {
-            Console.ForegroundColor = isRareItem[i] ? RARE_COLOR : COMMON_COLOR;
+            for (int column = 0; column < MAP_SIZE; column++)
+            {
+                bool isRowEven = row % 2 == 0;
+                bool isColumnEven = column % 2 == 0;
 
-            // InvariantCulture forces the dot as decimal separator (134.50)
-            string weightText = weights[i].ToString("F1", CultureInfo.InvariantCulture);
-            string costText = costs[i].ToString("F2", CultureInfo.InvariantCulture) + " " + CURRENCY;
-
-            Console.WriteLine("{0,-10}{1,-12}{2,-8}{3,-13}{4,-12}{5,-12}{6}",
-                itemNames[i], minLevels[i], powers[i], weightText, costText, isRareItem[i], rareTypes[i]);
+                if (isRowEven && isColumnEven)
+                {
+                    map[row, column] = WATCHTOWER;
+                }
+                else if (!isRowEven && !isColumnEven)
+                {
+                    map[row, column] = HIDDEN_CAVE;
+                }
+                else
+                {
+                    map[row, column] = NEUTRAL_TERRAIN;
+                }
+            }
         }
 
+        Console.WriteLine();
+        Console.ForegroundColor = TITLE_COLOR;
+        Console.WriteLine("=== 2. MAP (two-dimensional array) ===");
+        Console.ForegroundColor = LEGEND_COLOR;
+        Console.WriteLine($"{WATCHTOWER} Watchtower (both even)  {HIDDEN_CAVE} Hidden cave (both odd)  {NEUTRAL_TERRAIN} Neutral terrain (other)");
         Console.ResetColor();
+
+        for (int row = 0; row < MAP_SIZE; row++)
+        {
+            for (int column = 0; column < MAP_SIZE; column++)
+            {
+                Console.Write(map[row, column] + " ");
+            }
+            Console.WriteLine();
+        }
+
+        // 3. Jagged array (regions)
+        string[][] regions = new string[REGION_COUNT][];
+        regions[0] = new string[FIRST_REGION_COLUMNS];
+        regions[1] = new string[SECOND_REGION_COLUMNS];
+        regions[2] = new string[THIRD_REGION_COLUMNS];
+
+        for (int row = 0; row < regions.Length; row++)
+        {
+            for (int column = 0; column < regions[row].Length; column++)
+            {
+                // Odd row + column is an extra resource, even is empty land
+                regions[row][column] = (row + column) % 2 != 0 ? EXTRA_RESOURCE : EMPTY_LAND;
+            }
+        }
+
+        Console.WriteLine();
+        Console.ForegroundColor = TITLE_COLOR;
+        Console.WriteLine("=== 3. REGIONS (jagged array) ===");
+        Console.ForegroundColor = LEGEND_COLOR;
+        Console.WriteLine($"{EXTRA_RESOURCE} Extra resource (row + column odd)  {EMPTY_LAND} Empty land (row + column even)");
+        Console.ResetColor();
+
+        for (int row = 0; row < regions.Length; row++)
+        {
+            for (int column = 0; column < regions[row].Length; column++)
+            {
+                Console.Write(regions[row][column] + " ");
+            }
+            Console.WriteLine();
+        }
     }
 }
