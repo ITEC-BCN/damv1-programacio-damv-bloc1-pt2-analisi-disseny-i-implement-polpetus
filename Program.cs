@@ -5,181 +5,106 @@ class Program
     static void Main()
     {
         // Constants
-        const int MAP_SIZE = 10;
-        const int MAX_ATTEMPTS = 3;
-        const double TREASURE_PROBABILITY = 0.1;
-        const char GROUND = '0';
-        const char TREASURE = '*';
+        const int PLAYER_COUNT = 4;
+        const int MATCH_COUNT = 5;
+        const int MIN_KILLS = 0;
+        const int MAX_KILLS = 10;
+        const int HIGH_KILLS = 8;
+        const int LOW_KILLS = 2;
 
-        const int OPTION_DIG = 1;
-        const int OPTION_SHOW_MAP = 2;
-        const int OPTION_EXIT = 3;
+        // Table layout
+        const int NAME_COLUMN_WIDTH = 14;
+        const int MATCH_COLUMN_WIDTH = 8;
+        const int TABLE_WIDTH = NAME_COLUMN_WIDTH + MATCH_COUNT * MATCH_COLUMN_WIDTH;
+        const char TITLE_LINE = '=';
+        const char ROW_LINE = '-';
 
         // Console colors
         const ConsoleColor TITLE_COLOR = ConsoleColor.Cyan;
-        const ConsoleColor INDEX_COLOR = ConsoleColor.DarkYellow;
-        const ConsoleColor PROMPT_COLOR = ConsoleColor.Yellow;
-        const ConsoleColor SUCCESS_COLOR = ConsoleColor.Green;
-        const ConsoleColor WARNING_COLOR = ConsoleColor.Yellow;
+        const ConsoleColor HEADER_COLOR = ConsoleColor.DarkYellow;
+        const ConsoleColor LINE_COLOR = ConsoleColor.DarkGray;
+        const ConsoleColor NAME_COLOR = ConsoleColor.White;
+        const ConsoleColor HIGH_KILLS_COLOR = ConsoleColor.Green;
+        const ConsoleColor LOW_KILLS_COLOR = ConsoleColor.Red;
+        const ConsoleColor NORMAL_KILLS_COLOR = ConsoleColor.Gray;
         const ConsoleColor ERROR_COLOR = ConsoleColor.Red;
-        const ConsoleColor GROUND_COLOR = ConsoleColor.DarkGray;
-        const ConsoleColor TREASURE_COLOR = ConsoleColor.Yellow;
 
-        // Create the map and fill it randomly with ground or treasure
-        char[,] map = new char[MAP_SIZE, MAP_SIZE];
+        string[] playerNames = { "ShadowWolf", "PixelNinja", "CyberMage", "DragonSlayer" };
+
+        // Error control: every player needs exactly one row in the matrix
+        if (playerNames.Length != PLAYER_COUNT)
+        {
+            Console.ForegroundColor = ERROR_COLOR;
+            Console.WriteLine($"Error: expected {PLAYER_COUNT} player names but found {playerNames.Length}.");
+            Console.ResetColor();
+            return;
+        }
+
+        // Matrix: one row per player, one column per match
+        int[,] kills = new int[PLAYER_COUNT, MATCH_COUNT];
         Random random = new Random();
 
-        for (int row = 0; row < MAP_SIZE; row++)
+        for (int player = 0; player < PLAYER_COUNT; player++)
         {
-            for (int column = 0; column < MAP_SIZE; column++)
+            for (int match = 0; match < MATCH_COUNT; match++)
             {
-                map[row, column] = random.NextDouble() < TREASURE_PROBABILITY ? TREASURE : GROUND;
+                // Upper bound of Next() is exclusive, so we add 1 to include MAX_KILLS
+                int value = random.Next(MIN_KILLS, MAX_KILLS + 1);
+
+                // Error control: never store a value outside the allowed range
+                if (value < MIN_KILLS || value > MAX_KILLS)
+                {
+                    Console.ForegroundColor = ERROR_COLOR;
+                    Console.WriteLine($"Error: invalid kills value {value}.");
+                    Console.ResetColor();
+                    return;
+                }
+
+                kills[player, match] = value;
             }
         }
 
+        // Title
+        Console.ForegroundColor = LINE_COLOR;
+        Console.WriteLine(new string(TITLE_LINE, TABLE_WIDTH));
         Console.ForegroundColor = TITLE_COLOR;
-        Console.WriteLine("Welcome to the treasure explorer game!");
-        Console.ResetColor();
-        Console.WriteLine($"A {MAP_SIZE}x{MAP_SIZE} map with hidden treasures has been generated and you have {MAX_ATTEMPTS} attempts to get as many diamonds as possible...");
+        Console.WriteLine("Game Kill Stats");
+        Console.ForegroundColor = LINE_COLOR;
+        Console.WriteLine(new string(TITLE_LINE, TABLE_WIDTH));
 
-        int attemptsLeft = MAX_ATTEMPTS;
-        int treasuresFound = 0;
-        int option;
-        bool isValid;
-
-        do
+        // Header row: Player, Match1, Match2, ...
+        Console.ForegroundColor = HEADER_COLOR;
+        Console.Write("Player".PadRight(NAME_COLUMN_WIDTH));
+        for (int match = 0; match < MATCH_COUNT; match++)
         {
-            // Ask for the menu option until it is valid
-            do
-            {
-                Console.WriteLine();
-                Console.ForegroundColor = TITLE_COLOR;
-                Console.WriteLine("Main menu");
-                Console.ForegroundColor = INDEX_COLOR;
-                Console.Write($"{OPTION_DIG} - ");
-                Console.ResetColor();
-                Console.WriteLine("I want to dig!");
-                Console.ForegroundColor = INDEX_COLOR;
-                Console.Write($"{OPTION_SHOW_MAP} - ");
-                Console.ResetColor();
-                Console.WriteLine("Show the map");
-                Console.ForegroundColor = INDEX_COLOR;
-                Console.Write($"{OPTION_EXIT} - ");
-                Console.ResetColor();
-                Console.WriteLine("Exit");
-                Console.ForegroundColor = PROMPT_COLOR;
-                Console.Write("> ");
-                Console.ResetColor();
-
-                isValid = int.TryParse(Console.ReadLine(), out option)
-                          && option >= OPTION_DIG && option <= OPTION_EXIT;
-
-                if (!isValid)
-                {
-                    Console.ForegroundColor = ERROR_COLOR;
-                    Console.WriteLine($"Error: enter a number between {OPTION_DIG} and {OPTION_EXIT}.");
-                    Console.ResetColor();
-                }
-            } while (!isValid);
-
-            if (option == OPTION_DIG)
-            {
-                Console.WriteLine();
-                Console.ForegroundColor = SUCCESS_COLOR;
-                Console.WriteLine("You chose to dig!");
-                Console.ResetColor();
-
-                // Ask for the row until it is valid
-                int digRow;
-                do
-                {
-                    Console.WriteLine($"Enter the row (0-{MAP_SIZE - 1}):");
-                    Console.ForegroundColor = PROMPT_COLOR;
-                    Console.Write("> ");
-                    Console.ResetColor();
-
-                    isValid = int.TryParse(Console.ReadLine(), out digRow)
-                              && digRow >= 0 && digRow < MAP_SIZE;
-
-                    if (!isValid)
-                    {
-                        Console.ForegroundColor = ERROR_COLOR;
-                        Console.WriteLine($"Error: enter a number between 0 and {MAP_SIZE - 1}.");
-                        Console.ResetColor();
-                    }
-                } while (!isValid);
-
-                // Ask for the column until it is valid
-                int digColumn;
-                do
-                {
-                    Console.WriteLine($"Enter the column (0-{MAP_SIZE - 1}):");
-                    Console.ForegroundColor = PROMPT_COLOR;
-                    Console.Write("> ");
-                    Console.ResetColor();
-
-                    isValid = int.TryParse(Console.ReadLine(), out digColumn)
-                              && digColumn >= 0 && digColumn < MAP_SIZE;
-
-                    if (!isValid)
-                    {
-                        Console.ForegroundColor = ERROR_COLOR;
-                        Console.WriteLine($"Error: enter a number between 0 and {MAP_SIZE - 1}.");
-                        Console.ResetColor();
-                    }
-                } while (!isValid);
-
-                attemptsLeft--;
-                Console.WriteLine($"Digging at coordinates ({digRow},{digColumn})...");
-
-                if (map[digRow, digColumn] == TREASURE)
-                {
-                    // The treasure is collected, so it can't be found twice
-                    map[digRow, digColumn] = GROUND;
-                    treasuresFound++;
-
-                    Console.ForegroundColor = SUCCESS_COLOR;
-                    Console.WriteLine("You found a treasure! :D");
-                }
-                else
-                {
-                    Console.ForegroundColor = WARNING_COLOR;
-                    Console.WriteLine("There's nothing here :(!");
-                }
-
-                Console.ResetColor();
-
-                if (attemptsLeft == 0)
-                {
-                    Console.ForegroundColor = ERROR_COLOR;
-                    Console.WriteLine("You have run out of attempts!");
-                    Console.ResetColor();
-                }
-            }
-            else if (option == OPTION_SHOW_MAP)
-            {
-                Console.WriteLine();
-                Console.ForegroundColor = TITLE_COLOR;
-                Console.WriteLine("Current map:");
-                Console.ResetColor();
-
-                for (int row = 0; row < MAP_SIZE; row++)
-                {
-                    for (int column = 0; column < MAP_SIZE; column++)
-                    {
-                        Console.ForegroundColor = map[row, column] == TREASURE ? TREASURE_COLOR : GROUND_COLOR;
-                        Console.Write(map[row, column] + " ");
-                    }
-                    Console.WriteLine();
-                }
-
-                Console.ResetColor();
-            }
-        } while (option != OPTION_EXIT && attemptsLeft > 0);
-
+            Console.Write($"Match{match + 1}".PadRight(MATCH_COLUMN_WIDTH));
+        }
         Console.WriteLine();
-        Console.ForegroundColor = TITLE_COLOR;
-        Console.WriteLine($"You found {treasuresFound} treasure(s) in total!");
+
+        Console.ForegroundColor = LINE_COLOR;
+        Console.WriteLine(new string(ROW_LINE, TABLE_WIDTH));
+
+        // One row per player (green = many kills, red = few kills)
+        for (int player = 0; player < PLAYER_COUNT; player++)
+        {
+            Console.ForegroundColor = NAME_COLOR;
+            Console.Write(playerNames[player].PadRight(NAME_COLUMN_WIDTH));
+
+            for (int match = 0; match < MATCH_COUNT; match++)
+            {
+                int value = kills[player, match];
+
+                Console.ForegroundColor = value >= HIGH_KILLS ? HIGH_KILLS_COLOR
+                                        : value <= LOW_KILLS ? LOW_KILLS_COLOR
+                                        : NORMAL_KILLS_COLOR;
+                Console.Write(value.ToString().PadRight(MATCH_COLUMN_WIDTH));
+            }
+
+            Console.WriteLine();
+        }
+
+        Console.ForegroundColor = LINE_COLOR;
+        Console.WriteLine(new string(ROW_LINE, TABLE_WIDTH));
         Console.ResetColor();
     }
 }
