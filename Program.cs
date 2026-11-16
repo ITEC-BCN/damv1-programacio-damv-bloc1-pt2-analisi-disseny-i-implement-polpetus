@@ -1,110 +1,95 @@
 ﻿using System;
+using System.Globalization;
 
-class Program
+class program
 {
     static void Main()
     {
         // Constants
-        const int PLAYER_COUNT = 4;
-        const int MATCH_COUNT = 5;
-        const int MIN_KILLS = 0;
-        const int MAX_KILLS = 10;
-        const int HIGH_KILLS = 8;
-        const int LOW_KILLS = 2;
-
-        // Table layout
-        const int NAME_COLUMN_WIDTH = 14;
-        const int MATCH_COLUMN_WIDTH = 8;
-        const int TABLE_WIDTH = NAME_COLUMN_WIDTH + MATCH_COUNT * MATCH_COLUMN_WIDTH;
-        const char TITLE_LINE = '=';
-        const char ROW_LINE = '-';
+        const int MIN_SCORE = 0;
+        const int MAX_SCORE = 100;
+        const double GOOD_AVERAGE = 70.0;
+        const int NAME_COLUMN_WIDTH = 13;
+        const string AVERAGE_FORMAT = "F2";
 
         // Console colors
-        const ConsoleColor TITLE_COLOR = ConsoleColor.Cyan;
-        const ConsoleColor HEADER_COLOR = ConsoleColor.DarkYellow;
-        const ConsoleColor LINE_COLOR = ConsoleColor.DarkGray;
-        const ConsoleColor NAME_COLOR = ConsoleColor.White;
-        const ConsoleColor HIGH_KILLS_COLOR = ConsoleColor.Green;
-        const ConsoleColor LOW_KILLS_COLOR = ConsoleColor.Red;
-        const ConsoleColor NORMAL_KILLS_COLOR = ConsoleColor.Gray;
+        const ConsoleColor NAME_COLOR = ConsoleColor.DarkYellow;
+        const ConsoleColor SCORES_COLOR = ConsoleColor.White;
+        const ConsoleColor GOOD_AVERAGE_COLOR = ConsoleColor.Green;
+        const ConsoleColor NORMAL_AVERAGE_COLOR = ConsoleColor.Yellow;
+        const ConsoleColor TOTAL_COLOR = ConsoleColor.Cyan;
         const ConsoleColor ERROR_COLOR = ConsoleColor.Red;
 
-        string[] playerNames = { "ShadowWolf", "PixelNinja", "CyberMage", "DragonSlayer" };
+        string[] playerNames = { "LunaBlade", "IronFist", "ShadowNova", "PixelMage" };
+        int[] gamesPlayed = { 3, 5, 2, 4 };
 
-        // Error control: every player needs exactly one row in the matrix
-        if (playerNames.Length != PLAYER_COUNT)
+        // Error control: one number of games per player, and at least one game each
+        if (playerNames.Length != gamesPlayed.Length)
         {
             Console.ForegroundColor = ERROR_COLOR;
-            Console.WriteLine($"Error: expected {PLAYER_COUNT} player names but found {playerNames.Length}.");
+            Console.WriteLine("Error: the players and the games played don't match.");
             Console.ResetColor();
             return;
         }
 
-        // Matrix: one row per player, one column per match
-        int[,] kills = new int[PLAYER_COUNT, MATCH_COUNT];
+        foreach (int games in gamesPlayed)
+        {
+            if (games < 1)
+            {
+                Console.ForegroundColor = ERROR_COLOR;
+                Console.WriteLine("Error: every player must play at least one game.");
+                Console.ResetColor();
+                return;
+            }
+        }
+
+        // Jagged array: each row (player) has a different length
+        int[][] scores = new int[playerNames.Length][];
         Random random = new Random();
 
-        for (int player = 0; player < PLAYER_COUNT; player++)
+        for (int player = 0; player < scores.Length; player++)
         {
-            for (int match = 0; match < MATCH_COUNT; match++)
+            scores[player] = new int[gamesPlayed[player]];
+
+            for (int game = 0; game < scores[player].Length; game++)
             {
-                // Upper bound of Next() is exclusive, so we add 1 to include MAX_KILLS
-                int value = random.Next(MIN_KILLS, MAX_KILLS + 1);
-
-                // Error control: never store a value outside the allowed range
-                if (value < MIN_KILLS || value > MAX_KILLS)
-                {
-                    Console.ForegroundColor = ERROR_COLOR;
-                    Console.WriteLine($"Error: invalid kills value {value}.");
-                    Console.ResetColor();
-                    return;
-                }
-
-                kills[player, match] = value;
+                // Upper bound of Next() is exclusive, so we add 1 to include MAX_SCORE
+                scores[player][game] = random.Next(MIN_SCORE, MAX_SCORE + 1);
             }
         }
 
-        // Title
-        Console.ForegroundColor = LINE_COLOR;
-        Console.WriteLine(new string(TITLE_LINE, TABLE_WIDTH));
-        Console.ForegroundColor = TITLE_COLOR;
-        Console.WriteLine("Game Kill Stats");
-        Console.ForegroundColor = LINE_COLOR;
-        Console.WriteLine(new string(TITLE_LINE, TABLE_WIDTH));
+        // Show the scores and the average of each player
+        int globalTotal = 0;
 
-        // Header row: Player, Match1, Match2, ...
-        Console.ForegroundColor = HEADER_COLOR;
-        Console.Write("Player".PadRight(NAME_COLUMN_WIDTH));
-        for (int match = 0; match < MATCH_COUNT; match++)
+        for (int player = 0; player < scores.Length; player++)
         {
-            Console.Write($"Match{match + 1}".PadRight(MATCH_COLUMN_WIDTH));
-        }
-        Console.WriteLine();
+            int playerTotal = 0;
 
-        Console.ForegroundColor = LINE_COLOR;
-        Console.WriteLine(new string(ROW_LINE, TABLE_WIDTH));
-
-        // One row per player (green = many kills, red = few kills)
-        for (int player = 0; player < PLAYER_COUNT; player++)
-        {
             Console.ForegroundColor = NAME_COLOR;
-            Console.Write(playerNames[player].PadRight(NAME_COLUMN_WIDTH));
+            Console.Write($"{playerNames[player]}:".PadRight(NAME_COLUMN_WIDTH));
 
-            for (int match = 0; match < MATCH_COUNT; match++)
+            Console.ForegroundColor = SCORES_COLOR;
+            for (int game = 0; game < scores[player].Length; game++)
             {
-                int value = kills[player, match];
-
-                Console.ForegroundColor = value >= HIGH_KILLS ? HIGH_KILLS_COLOR
-                                        : value <= LOW_KILLS ? LOW_KILLS_COLOR
-                                        : NORMAL_KILLS_COLOR;
-                Console.Write(value.ToString().PadRight(MATCH_COLUMN_WIDTH));
+                Console.Write(scores[player][game] + " ");
+                playerTotal += scores[player][game];
             }
 
-            Console.WriteLine();
+            globalTotal += playerTotal;
+            double average = (double)playerTotal / scores[player].Length;
+
+            Console.ResetColor();
+            Console.Write("-> Average: ");
+            Console.ForegroundColor = average >= GOOD_AVERAGE ? GOOD_AVERAGE_COLOR : NORMAL_AVERAGE_COLOR;
+
+            // InvariantCulture so the decimal separator is always a dot
+            Console.WriteLine(average.ToString(AVERAGE_FORMAT, CultureInfo.InvariantCulture));
+            Console.ResetColor();
         }
 
-        Console.ForegroundColor = LINE_COLOR;
-        Console.WriteLine(new string(ROW_LINE, TABLE_WIDTH));
+        Console.WriteLine();
+        Console.ForegroundColor = TOTAL_COLOR;
+        Console.WriteLine($"Global tournament points total: {globalTotal}");
         Console.ResetColor();
     }
 }
