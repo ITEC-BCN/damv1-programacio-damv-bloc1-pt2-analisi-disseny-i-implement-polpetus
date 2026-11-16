@@ -1,95 +1,64 @@
 ﻿using System;
-using System.Globalization;
 
-class program
+class Program
 {
     static void Main()
     {
         // Constants
-        const int MIN_SCORE = 0;
-        const int MAX_SCORE = 100;
-        const double GOOD_AVERAGE = 70.0;
-        const int NAME_COLUMN_WIDTH = 13;
-        const string AVERAGE_FORMAT = "F2";
+        const char SPACE = ' ';
 
         // Console colors
-        const ConsoleColor NAME_COLOR = ConsoleColor.DarkYellow;
-        const ConsoleColor SCORES_COLOR = ConsoleColor.White;
-        const ConsoleColor GOOD_AVERAGE_COLOR = ConsoleColor.Green;
-        const ConsoleColor NORMAL_AVERAGE_COLOR = ConsoleColor.Yellow;
-        const ConsoleColor TOTAL_COLOR = ConsoleColor.Cyan;
+        const ConsoleColor TITLE_COLOR = ConsoleColor.Cyan;
+        const ConsoleColor PROMPT_COLOR = ConsoleColor.Yellow;
+        const ConsoleColor SUCCESS_COLOR = ConsoleColor.Green;
         const ConsoleColor ERROR_COLOR = ConsoleColor.Red;
 
-        string[] playerNames = { "LunaBlade", "IronFist", "ShadowNova", "PixelMage" };
-        int[] gamesPlayed = { 3, 5, 2, 4 };
+        Console.ForegroundColor = TITLE_COLOR;
+        Console.WriteLine("The King of Hyrule is waiting for the hero's registration!");
+        Console.ResetColor();
 
-        // Error control: one number of games per player, and at least one game each
-        if (playerNames.Length != gamesPlayed.Length)
+        string heroName;
+        bool isValid;
+
+        // Ask for the name until it is valid
+        do
         {
-            Console.ForegroundColor = ERROR_COLOR;
-            Console.WriteLine("Error: the players and the games played don't match.");
+            Console.WriteLine();
+            Console.ForegroundColor = TITLE_COLOR;
+            Console.WriteLine("Enter the hero's name:");
+            Console.ForegroundColor = PROMPT_COLOR;
+            Console.Write("> ");
             Console.ResetColor();
-            return;
-        }
 
-        foreach (int games in gamesPlayed)
-        {
-            if (games < 1)
+            // ReadLine() can return null, and Trim() removes the extra spaces at the start and the end
+            heroName = (Console.ReadLine() ?? string.Empty).Trim();
+
+            // The name can't be empty and can only contain letters (and spaces between words)
+            isValid = heroName.Length > 0;
+
+            // The loop stops as soon as a wrong character is found (isValid becomes false)
+            for (int i = 0; i < heroName.Length && isValid; i++)
+            {
+                if (!char.IsLetter(heroName[i]) && heroName[i] != SPACE)
+                {
+                    isValid = false;
+                }
+            }
+
+            if (!isValid)
             {
                 Console.ForegroundColor = ERROR_COLOR;
-                Console.WriteLine("Error: every player must play at least one game.");
+                Console.WriteLine("Error: the name can't be empty and can only contain letters.");
                 Console.ResetColor();
-                return;
             }
-        }
+        } while (!isValid);
 
-        // Jagged array: each row (player) has a different length
-        int[][] scores = new int[playerNames.Length][];
-        Random random = new Random();
-
-        for (int player = 0; player < scores.Length; player++)
-        {
-            scores[player] = new int[gamesPlayed[player]];
-
-            for (int game = 0; game < scores[player].Length; game++)
-            {
-                // Upper bound of Next() is exclusive, so we add 1 to include MAX_SCORE
-                scores[player][game] = random.Next(MIN_SCORE, MAX_SCORE + 1);
-            }
-        }
-
-        // Show the scores and the average of each player
-        int globalTotal = 0;
-
-        for (int player = 0; player < scores.Length; player++)
-        {
-            int playerTotal = 0;
-
-            Console.ForegroundColor = NAME_COLOR;
-            Console.Write($"{playerNames[player]}:".PadRight(NAME_COLUMN_WIDTH));
-
-            Console.ForegroundColor = SCORES_COLOR;
-            for (int game = 0; game < scores[player].Length; game++)
-            {
-                Console.Write(scores[player][game] + " ");
-                playerTotal += scores[player][game];
-            }
-
-            globalTotal += playerTotal;
-            double average = (double)playerTotal / scores[player].Length;
-
-            Console.ResetColor();
-            Console.Write("-> Average: ");
-            Console.ForegroundColor = average >= GOOD_AVERAGE ? GOOD_AVERAGE_COLOR : NORMAL_AVERAGE_COLOR;
-
-            // InvariantCulture so the decimal separator is always a dot
-            Console.WriteLine(average.ToString(AVERAGE_FORMAT, CultureInfo.InvariantCulture));
-            Console.ResetColor();
-        }
+        // First letter in uppercase and the rest in lowercase
+        string normalizedName = char.ToUpperInvariant(heroName[0]) + heroName.Substring(1).ToLowerInvariant();
 
         Console.WriteLine();
-        Console.ForegroundColor = TOTAL_COLOR;
-        Console.WriteLine($"Global tournament points total: {globalTotal}");
+        Console.ForegroundColor = SUCCESS_COLOR;
+        Console.WriteLine($"Welcome, {normalizedName}! Hyrule trusts you.");
         Console.ResetColor();
     }
 }
