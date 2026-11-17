@@ -55,23 +55,22 @@ dotnet run
 
 ## Git workflow
 
-Every activity is developed in its own branch and merged into `main`:
+Every activity is developed and committed in its own branch. The activity branches are **not** merged into `main`: `main` only contains the `README.md`.
 
 ```text
-main
- ├── activity-1  → merge
- ├── activity-2  → merge
- ├── ...
- └── activity-13 → merge
+main        → README.md
+activity-1  → Activity 1
+activity-2  → Activity 2
+...
+activity-13 → Activity 13
 ```
 
-1. Create a branch from an updated `main` (`git switch -c activity-N`).
-2. Write the activity and test it with `dotnet run`.
+1. Create a branch for the activity (`git switch -c activity-N`).
+2. Write the activity in `Program.cs` and test it with `dotnet run`.
 3. Commit with a descriptive message (`git commit -m "Add activity N: description"`).
-4. Merge the branch into `main` with a merge commit (`git merge --no-ff activity-N`).
-5. Push everything to GitHub (`git push origin --all`).
+4. Push the branch to GitHub (`git push -u origin activity-N`).
 
-Because every activity replaces `Program.cs`, the file in `main` is the last merged activity. The code of each one is available in its own branch and in the commit history (`git log --oneline --graph`).
+To see the code of an activity, switch to its branch (`git switch activity-N`) or browse it on GitHub using the branch selector. The full history can be checked with `git log --oneline --all --graph`.
 
 ## Author
 
