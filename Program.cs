@@ -2,96 +2,87 @@
 
 class Program
 {
+    // Constants
+    const int MIN_LENGTH = 3;
+    const int MAX_LENGTH = 16;
+    const char SPACE = ' ';
+    const char UNDERSCORE = '_';
+    const string RESERVED_NAME = "admin";
+
+    // Console colors
+    const ConsoleColor TITLE_COLOR = ConsoleColor.Cyan;
+    const ConsoleColor PROMPT_COLOR = ConsoleColor.Yellow;
+    const ConsoleColor SUCCESS_COLOR = ConsoleColor.Green;
+    const ConsoleColor ERROR_COLOR = ConsoleColor.Red;
+
     static void Main()
     {
-        // Constants
-        const string CENSOR = "****";
-        const char WORD_SEPARATOR = ' ';
-
-        // Console colors
-        const ConsoleColor TITLE_COLOR = ConsoleColor.Cyan;
-        const ConsoleColor PROMPT_COLOR = ConsoleColor.Yellow;
-        const ConsoleColor SUCCESS_COLOR = ConsoleColor.Green;
-        const ConsoleColor WARNING_COLOR = ConsoleColor.Red;
-        const ConsoleColor ERROR_COLOR = ConsoleColor.Red;
-        const ConsoleColor MESSAGE_COLOR = ConsoleColor.White;
-
-        string[] bannedWords =
-        {
-            "noob", "nub", "uninstall", "trash", "ez", "bot", "garbage", "loser", "kys",
-            "nigger", "niga", "niger" , "nigga", "faggot", "fag", "retard", "bitch", "cunt", "whore", "slut",
-            "bastard", "idiot", "stupid", "dumbass", "asshole",
-            "maricon", "marica", "maricón", "puta", "puto", "zorra", "cabron", "cabrón", "gilipollas",
-            "imbecil", "imbécil", "subnormal", "mongolo", "capullo", "hijoputa"
-        };
-
-        // Punctuation that can be stuck to a word ("ez!" must be detected too)
-        char[] punctuation = { '.', ',', ';', ':', '!', '?' };
-
         Console.ForegroundColor = TITLE_COLOR;
-        Console.WriteLine("Summoner's Rift chat moderator");
+        Console.WriteLine("Summoner registration");
         Console.ResetColor();
 
-        string message;
-        bool isValid;
+        string name;
+        string error;
 
-        // Ask for the message until it is not empty
+        // Ask for the name until it follows all the rules
         do
         {
             Console.WriteLine();
             Console.ForegroundColor = TITLE_COLOR;
-            Console.WriteLine("Enter a chat message:");
+            Console.WriteLine("Enter your summoner name:");
             Console.ForegroundColor = PROMPT_COLOR;
             Console.Write("> ");
             Console.ResetColor();
 
-            message = Console.ReadLine() ?? string.Empty;
-            isValid = message.Trim().Length > 0;
+            // No Trim() here: a name ending with a space must be rejected
+            name = Console.ReadLine() ?? string.Empty;
+            error = GetNameError(name);
 
-            if (!isValid)
+            if (error != null)
             {
                 Console.ForegroundColor = ERROR_COLOR;
-                Console.WriteLine("Error: the message can't be empty.");
+                Console.WriteLine($"Invalid name: {error}");
                 Console.ResetColor();
             }
-        } while (!isValid);
+        } while (error != null);
 
-        // Check every word, ignoring uppercase and lowercase
-        string[] words = message.Split(WORD_SEPARATOR);
-        bool containsBannedWord = false;
+        Console.WriteLine();
+        Console.ForegroundColor = SUCCESS_COLOR;
+        Console.WriteLine($"Welcome to the Rift, {name}!");
+        Console.ResetColor();
+    }
 
-        for (int i = 0; i < words.Length; i++)
+    // Returns the first broken rule, or null if the name is valid
+    static string GetNameError(string name)
+    {
+        if (name.Length < MIN_LENGTH || name.Length > MAX_LENGTH)
         {
-            string cleanWord = words[i].Trim(punctuation);
-            bool isBanned = false;
+            return $"it must have between {MIN_LENGTH} and {MAX_LENGTH} characters.";
+        }
 
-            foreach (string bannedWord in bannedWords)
-            {
-                if (string.Equals(cleanWord, bannedWord, StringComparison.OrdinalIgnoreCase))
-                {
-                    isBanned = true;
-                    break;
-                }
-            }
+        if (char.IsDigit(name[0]))
+        {
+            return "it can't start with a number.";
+        }
 
-            if (isBanned)
+        if (name[name.Length - 1] == SPACE)
+        {
+            return "it can't end with a space.";
+        }
+
+        foreach (char character in name)
+        {
+            if (!char.IsLetterOrDigit(character) && character != UNDERSCORE)
             {
-                // Only the word is replaced, so the punctuation stays
-                words[i] = words[i].Replace(cleanWord, CENSOR);
-                containsBannedWord = true;
+                return "it can only contain letters, digits and underscores.";
             }
         }
 
-        Console.WriteLine();
-        Console.ForegroundColor = containsBannedWord ? WARNING_COLOR : SUCCESS_COLOR;
-        Console.WriteLine(containsBannedWord
-            ? "The message contains banned words!"
-            : "The message is clean.");
+        if (string.Equals(name, RESERVED_NAME, StringComparison.OrdinalIgnoreCase))
+        {
+            return "this name is reserved.";
+        }
 
-        Console.ForegroundColor = TITLE_COLOR;
-        Console.Write("Censored message: ");
-        Console.ForegroundColor = MESSAGE_COLOR;
-        Console.WriteLine(string.Join(WORD_SEPARATOR, words));
-        Console.ResetColor();
+        return null;
     }
 }
